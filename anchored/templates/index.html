@@ -1,0 +1,159 @@
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <title>Unreal Charting</title>
+    <style>
+   
+      .input-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      
+      #stock-ticker {
+        font-size: 18px;
+        padding: 10px;
+      }
+
+      #update-chart {
+        font-size: 18px;
+        padding: 10px 20px;
+      }
+
+      #container {
+        max-width: 70%;
+        margin-left: auto;
+        margin-right: auto;
+      }
+    
+    </style>
+  </head>
+  <body>
+	
+    <h1 class="h2">anchored v1.1</h1>
+
+    <div class="input-container">
+      <input type="text" id="stock-ticker" placeholder="Enter stock ticker">
+      <button id="update-chart">Update Chart</button>
+    </div>
+
+    <!-- Highcharts display -->
+    <div class="border" id="container" style="min-width: 310px; height: 1000px; margin: 0 auto"></div>
+	
+    <!-- Chartjs libraries -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    
+    <script>
+      function updateChart(stockTicker) {
+        fetch('/anchored?stock_ticker=' + stockTicker, {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(response => {
+            if (response.ok) {
+              return response.json();
+            } else {
+              throw new Error('Failed to fetch data for stock ticker: ' + stockTicker);
+            }
+          })
+          .then(data => {
+            dates = data.dates;
+            close_values = data.close_values;
+            stock =  data.stock;
+
+            chart.update({
+              title: {
+                text: stock
+              },
+              xAxis: {
+                categories: dates
+              },
+              series: [{
+                name: stock,
+                data: close_values
+              }]
+            });
+          })
+          .catch(error => {
+            console.error('Error:', error);
+          });
+      }
+
+      document.getElementById('update-chart').addEventListener('click', function () {
+        var stockTicker = document.getElementById('stock-ticker').value;
+        updateChart(stockTicker);
+      });
+      
+      dates = {{ dates|safe }}
+      close_values = {{ close_values|safe }}
+      stock = '{{ stock|safe }}'
+      
+      var chart = Highcharts.chart('container', {
+        chart: {
+          type: 'line',
+          zoomType: 'x', // Enable zooming along the x-axis
+          panning: {
+            enabled: true,
+            type: 'x' // Enable panning along the x-axis
+          },
+          panKey: 'shift' // To pan the chart, the user needs to hold the 'shift' key while dragging
+        },
+        title: {
+          text: stock
+        },
+        xAxis: {
+          categories: dates,
+          crosshair: {
+            color: 'rgba(0, 0, 0, 0.25)', // Customize the color and opacity of the crosshair
+            width: 1, // Customize the width of the crosshair line
+            snap: false
+          }
+        },
+        yAxis: {
+          title: {
+            text: 'Price',
+          },
+          crosshair: {
+            color: 'rgba(0, 0, 0, 0.25)', // Customize the color and opacity of the crosshair
+            width: 1, // Customize the width of the crosshair line
+            snap: false
+          }
+        },
+        tooltip: {
+          headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+          pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+            '<td style="padding:0"><b>${point.y:.2f}</b></td></tr>',
+          footerFormat: '</table>',
+          shared: true,
+          useHTML: true
+        },
+        plotOptions: {
+          column: {
+            pointPadding: 0.2,
+            borderWidth: 0
+          }
+        },
+        series: [{
+          name: 'Stock',
+          data: close_values
+        }]
+      });
+
+      document.getElementById('update-chart').addEventListener('click', function() {
+        var stockTicker = document.getElementById('stock-ticker').value;
+        // Add logic to fetch new data for the given stock ticker and update the chart
+        // You will need to modify your Django view to accept the stock ticker as input and return the updated data
+      });
+    </script>
+    
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+    
+  </body>
+</html>
