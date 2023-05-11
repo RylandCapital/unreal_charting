@@ -71,13 +71,14 @@
     
     <script>
       function updateChart(stockTicker) {
-        fetch('/anchored?stock_ticker=' + stockTicker, {
+        fetch('/anchored/vwaps?stock_ticker=' + stockTicker, {
           headers: {
             'X-Requested-With': 'XMLHttpRequest',
             'Content-Type': 'application/json'
           }
         })
           .then(response => {
+            console.log(response)
             if (response.ok) {
               return response.json();
             } else {
