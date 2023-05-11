@@ -42,9 +42,12 @@
     <div class="border" id="container" style="min-width: 310px; height: 1000px; margin: 0 auto"></div>
 	
     <!-- Chartjs libraries -->
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <script src="https://code.highcharts.com/modules/exporting.js"></script>
-    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+   
+
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/data.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/accessibility.js"></script>
     
     <script>
       function updateChart(stockTicker) {
@@ -61,22 +64,66 @@
               throw new Error('Failed to fetch data for stock ticker: ' + stockTicker);
             }
           })
-          .then(data => {
-            dates = data.dates;
-            close_values = data.close_values;
-            stock =  data.stock;
+          .then(d => {
+            data = d.data;
+            vwap1 = d.maxloc;
+            vwap2 = d.minloc;
+            vwap3 = d.volloc;
+            stock =  d.stock;
+            miny = d.miny;
+            maxy =  d.maxy;
 
+            let avgDiff = 0;
+            for (let i = 1; i < data.length; i++) {
+              avgDiff += data[i][0] - data[i - 1][0];
+            }
+            avgDiff /= data.length - 1;
+
+            // Generate 10 fake data points
+            const futureDataPoints = 30;
+            const fakeData = [];
+            let lastDate = data[data.length - 1][0];
+            for (let i = 0; i < futureDataPoints; i++) {
+              lastDate += avgDiff;
+              fakeData.push([lastDate, 0, 0, 0, 0]);
+            }
+
+            // Append the fake data points to the data array
+            data = data.concat(fakeData);
+            
             chart.update({
               title: {
                 text: stock
-              },
-              xAxis: {
-                categories: dates
-              },
-              series: [{
-                name: stock,
-                data: close_values
-              }]
+            },
+            yAxis: {
+            min:miny,
+            max:maxy,
+            labels:{
+              align:'left'
+            }
+            },
+            series: [
+            {
+            type: 'candlestick',
+            name: stock,
+            data: data,   
+            },
+            {
+            type: 'line',
+            name: 'High Lock',
+            data: vwap1,
+            },
+            {
+            type: 'line',
+            name: 'High Lock',
+            data: vwap2,
+            },
+            {
+            type: 'line',
+            name: 'High Lock',
+            data: vwap3,
+            },
+          ]
             });
           })
           .catch(error => {
@@ -89,65 +136,120 @@
         updateChart(stockTicker);
       });
       
-      dates = {{ dates|safe }}
-      close_values = {{ close_values|safe }}
+      data = {{ data|safe }}
+      vwap1 = {{ maxloc|safe }}
+      vwap2 = {{ minloc|safe }}
+      vwap3 = {{ volloc|safe }}
+      miny = {{ miny|safe }}
+      maxy = {{ maxy|safe }}
       stock = '{{ stock|safe }}'
+
+      let avgDiff = 0;
+      for (let i = 1; i < data.length; i++) {
+        avgDiff += data[i][0] - data[i - 1][0];
+      }
+      avgDiff /= data.length - 1;
+
+      // Generate 10 fake data points
+      const futureDataPoints = 30;
+      const fakeData = [];
+      let lastDate = data[data.length - 1][0];
+      for (let i = 0; i < futureDataPoints; i++) {
+        lastDate += avgDiff;
+        fakeData.push([lastDate, 0, 0, 0, 0]);
+      }
+
+      // Append the fake data points to the data array
+      data = data.concat(fakeData);
       
-      var chart = Highcharts.chart('container', {
-        chart: {
-          type: 'line',
-          zoomType: 'x', // Enable zooming along the x-axis
-          panning: {
-            enabled: true,
-            type: 'x' // Enable panning along the x-axis
-          },
-          panKey: 'shift' // To pan the chart, the user needs to hold the 'shift' key while dragging
+      
+      console.log(data)
+
+      chart = Highcharts.stockChart('container', {
+        tooltip: {
+        enabled: false
+        },
+        navigator: {
+            enabled: false
+        },
+        rangeSelector: {
+          selected: 1,
+          enabled: false, // Disable the zoom buttons
         },
         title: {
-          text: stock
+          text: stock,
         },
         xAxis: {
-          categories: dates,
           crosshair: {
-            color: 'rgba(0, 0, 0, 0.25)', // Customize the color and opacity of the crosshair
-            width: 1, // Customize the width of the crosshair line
-            snap: false
-          }
+            snap: false,
+            label: {
+                    enabled: true,  
+                },
+          },
         },
         yAxis: {
-          title: {
-            text: 'Price',
+          min:miny,
+          max:maxy,
+          labels:{
+            align:'left'
           },
           crosshair: {
-            color: 'rgba(0, 0, 0, 0.25)', // Customize the color and opacity of the crosshair
-            width: 1, // Customize the width of the crosshair line
-            snap: false
-          }
+            snap: false,
+            label: {
+                    enabled: true,
+                    format: '{value:.2f}',
+                    align:'left'
+                },    
+          },
         },
-        tooltip: {
-          headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-          pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-            '<td style="padding:0"><b>${point.y:.2f}</b></td></tr>',
-          footerFormat: '</table>',
-          shared: true,
-          useHTML: true
-        },
+        series: [
+          {
+            type: 'candlestick',
+            name: stock,
+            data: data,
+            color: 'red',
+            lineColor: 'red',
+            upColor: 'green',
+            upLineColor: 'green',
+          },
+          {
+            type: 'line',
+            name: 'High Lock',
+            data: vwap1,
+            color: 'blue',
+            lineWidth: 3,
+            dashStyle: 'Dash',
+          },
+          {
+            type: 'line',
+            name: 'Low Lock',
+            data: vwap2,
+            color: 'blue',
+            lineWidth: 3,
+            dashStyle: 'Dash',
+          },
+          {
+            type: 'line',
+            name: 'Vol Lock',
+            data: vwap3,
+            color: 'orange',
+            lineWidth: 3,
+            dashStyle: 'Dash',
+          },
+        ],
         plotOptions: {
-          column: {
-            pointPadding: 0.2,
-            borderWidth: 0
-          }
-        },
-        series: [{
-          name: 'Stock',
-          data: close_values
-        }]
-      });
+            series: {
+                states: {
+                    inactive: {
+                        opacity: 1
+                    }
+                }
+            }
+        }
+        });
 
       document.getElementById('update-chart').addEventListener('click', function() {
         var stockTicker = document.getElementById('stock-ticker').value;
-        // Add logic to fetch new data for the given stock ticker and update the chart
-        // You will need to modify your Django view to accept the stock ticker as input and return the updated data
       });
     </script>
     

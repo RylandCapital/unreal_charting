@@ -4,6 +4,7 @@ import datetime as dt
 import requests
 import pandas as pd
 import numpy as np
+import time
 
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -55,14 +56,26 @@ def get_daily_equity(request):
     df['vwap_highvol'] = (df['adjusted_close'] * df['volume']).iloc[vol_nodes[0]:].expanding().sum() / \
                       df['volume'].iloc[vol_nodes[0]:].expanding().sum()
     
+    df['date'] = df['date'].apply(lambda x: int(time.mktime(dt.datetime.strptime(x, "%Y-%m-%d").timetuple())))
+    data = [[int(x[0]*1000),x[1],x[2],x[3],x[4]] for x in df[['date','adjusted_open','adjusted_high', 'adjusted_low','adjusted_close']].values.tolist()]
+    maxloc = [[int(x[0]*1000),x[1],x[2],x[3],x[4]] for x in df[['date','vwap_maxloc','vwap_maxloc','vwap_maxloc','vwap_maxloc']].dropna().values.tolist()]
+    minloc = [[int(x[0]*1000),x[1],x[2],x[3],x[4]] for x in df[['date','vwap_minloc','vwap_minloc','vwap_minloc','vwap_minloc']].dropna().values.tolist()]
+    volloc = [[int(x[0]*1000),x[1],x[2],x[3],x[4]] for x in df[['date','vwap_highvol','vwap_highvol','vwap_highvol','vwap_highvol']].dropna().values.tolist()]
     context = {
-        "close_values": list(df['adjusted_close'].values),
-        'dates': list(df['date'].values),
-        'stock': stock_ticker
+        "data": data,
+        "maxloc":maxloc,
+        "minloc":minloc,
+        "volloc":volloc,
+        'stock': stock_ticker,
+        "miny": df['adjusted_low'].min()*.98,
+        "maxy": df['adjusted_high'].max()*1.02
         }
 
-    print(stock_ticker)
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse(context)
     else:
         return render(request, 'index.html', context=context)
+    
+
+    
+  
