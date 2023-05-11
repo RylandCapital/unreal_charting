@@ -77,5 +77,9 @@ def get_daily_equity(request):
         return render(request, 'index.html', context=context)
     
 
+def landing(request):
+    return render(request, 'landing.html')
+    
+
     
   
