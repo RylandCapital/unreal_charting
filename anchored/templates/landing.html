@@ -1,6 +1,7 @@
+{% load static %}
 <html>
 <head>
-  <title>Unreal Charting v1.1</title>
+  <title>CWP Charts</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -23,18 +24,31 @@
       text-decoration: none;
     }
     .content {
-      margin-left: 220px;
+      margin-left: 200px;
       padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    img {
+      width: 100%; /* or any other size you'd like, but this will ensure the image takes the full width of the container */
+      max-width: 600px; /* optional, but this will ensure the image doesn't get too large */
+      height: auto;
     }
   </style>
 </head>
 <body>
   <div class="sidebar">
-    <h2>Analysis</h2>
-    <a href="{% url 'vwaps' %}">Anchored</a>
+    <h2>CWP Charts v1.1</h2>
+    <!--<img src="{% static 'logo.png' %}" alt="Logo" />-->
+    <a href="{% url 'anchored' %}">Home</a>
+    <a href="{% url 'vwaps' %}">Anchored VWAPS</a>
+    <a href="{% url 'analogs' %}">Analogs</a>
   </div>
   <div class="content">
-    <h1>Welcome to Unreal Charting v1.1</h1>
+    <h1>CWP Charts v1.1</h1>
   </div>
 </body>
 </html>

@@ -1,0 +1,205 @@
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <style>
+        body {
+        font-family: Arial, sans-serif;
+      }
+      .sidebar {
+        width: 200px;
+        height: 100vh;
+        position: fixed;
+        left: 0;
+        top: 0;
+        background-color: #333;
+        color: white;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .sidebar a {
+        color: white;
+        text-decoration: none;
+      }
+
+      .input-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      
+      #stock-ticker {
+        font-size: 18px;
+        padding: 10px;
+      }
+
+      #update-chart-analog {
+        font-size: 18px;
+        padding: 10px 20px;
+      }
+
+      #container {
+        max-width: 70%;
+        margin-left: auto;
+        margin-right: auto;
+      }   
+    </style>
+  </head>
+  <body>
+    <div class="sidebar">
+      <h2>Analysis</h2>
+      <a href="{% url 'anchored' %}">Home</a>
+      <a href="{% url 'vwaps' %}">Anchored VWAPS</a>
+      <a href="{% url 'analogs' %}">Analogs</a>
+    </div>
+	  <div class="content">
+    <div class="input-container">
+      <input type="text" id="stock-ticker-analog" placeholder="Enter stock ticker">
+      <button id="update-chart-analog">Update Chart</button>
+    </div>
+    <!-- Highcharts display -->
+    <div class="border" id="container" style="min-width: 310px; height: 1000px; margin: 0 auto"></div>
+	  </div>
+    </body>
+    </html>
+    
+    <!-- Chartjs libraries -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+
+
+
+    <script>
+        function updateChart(stockTicker) {
+            fetch('/anchored/analogs?stock_ticker_analog=' + stockTicker, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            }
+            })
+            .then(response => {
+                console.log(response)
+                if (response.ok) {
+                return response.json();
+                } else {
+                throw new Error('Failed to fetch data for stock ticker: ' + stockTicker);
+                }
+            })
+            .then(d => {
+                average = d.average;
+                stock = d.stock;
+                
+                chart.update({
+                    title: {
+                        text: stock
+                    },
+                    subtitle: {
+                        text: stock
+                    },
+                    series: [
+                    {
+                        data: average
+                    }
+                    ]
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+      document.getElementById('update-chart-analog').addEventListener('click', function () {
+        var stockTicker = document.getElementById('stock-ticker-analog').value;
+        updateChart(stockTicker);
+      });
+      
+      
+      
+      
+      
+      average = {{ average |safe }}
+      stock = '{{ stock|safe }}'
+
+      console.log(average)
+
+      chart = Highcharts.chart('container', {
+            title: {
+                text: 'Analog Projections'
+            },
+
+            subtitle: {
+                text: stock
+            },
+
+            tooltip: {
+                enabled: false
+                },
+
+            plotOptions: {
+                series: {
+                    marker: {
+                        enabled: false,
+                        states: {
+                            hover: {
+                                enabled: false
+                            }
+                        }
+                    }
+                }
+            },
+
+            xAxis: {
+                crosshair: {
+                    snap: false,
+                    label: {
+                            enabled: true,  
+                        },
+                },
+                plotLines: [{
+                        value: 89,
+                        width: 2,
+                        color: 'black',
+                        dashStyle: 'dash',
+                        label: {
+                            text: 'Start Projection',
+                            style: {
+                                color: 'black',
+                                fontWeight: 'bold',
+                                fontSize:14
+                            }
+                        }      
+                }]
+            },
+            
+            yAxis: {
+                labels:{
+                    align:'left'
+                },
+                crosshair: {
+                    snap: false,
+                    label: {
+                            enabled: true,
+                            format: '{value:.2f}',
+                            align:'left'
+                        },    
+                },
+                },
+
+            series: [{
+                data: average,
+                lineWidth: 5,
+                name: 'Days (89-119 is projected next 30 days)'
+            }]
+        });
+
+
+      
+      
+    </script>
+    
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+    
+

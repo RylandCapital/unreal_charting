@@ -10,6 +10,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from dateutil.relativedelta import relativedelta
 from scipy.signal import argrelextrema
+from dtaidistance import dtw
 
 from dotenv import load_dotenv
 
@@ -77,9 +78,105 @@ def get_daily_equity(request):
         return render(request, 'index.html', context=context)
     
 
+def get_analogs(request):
+    
+    stock_ticker = request.GET.get('stock_ticker_analog', '')
+
+    if stock_ticker != '':
+
+        stop = dt.datetime.today()
+        start = stop - relativedelta(years=10)
+
+        req = requests.get('https://eodhistoricaldata.com/api/eod' +
+                            '/{0}.US?api_token={1}&fmt=json'.format(stock_ticker, EOD) +
+                            '&period=d&from={0}&to={1}'.format(start.strftime('%Y-%m-%d'),
+                                                                stop.strftime('%Y-%m-%d')
+                                                                ))
+        df = pd.DataFrame.from_dict(req.json())
+
+
+        # Compute log-returns
+        df['Return'] = df['close'].pct_change()
+        df['LogReturn'] = np.log1p(df['close'].pct_change())
+
+
+
+        df = df.dropna()
+
+        # Get the log-returns for the last 90 days
+        current_period = df.tail(90)['LogReturn'].to_numpy()
+
+        # Initialize the top 10 best matches list
+        top_matches = pd.DataFrame([], columns=['start','stop','distance'])
+
+        # Loop over historical periods and find the best matches
+        for i in range(90, len(df) - 90):
+
+            historical_period = df.iloc[i-90:i][['close','LogReturn']]
+            distance = dtw.distance(current_period, historical_period['LogReturn'].to_numpy())
+            
+            top_matches.loc[i,'start'] = i-90
+            top_matches.loc[i,'stop'] = i
+            top_matches.loc[i,'distance'] = distance
+
+            top_matches.sort_values('distance',inplace=True)
+            top_matches.reset_index(drop=True,inplace=True)
+
+        top_ten_filtered = pd.DataFrame([], columns=['start','stop','distance'])
+        top_ten_filtered.loc[i,'start'] = top_matches.loc[0,'start']
+        top_ten_filtered.loc[i,'stop'] = top_matches.loc[0,'stop']
+        top_ten_filtered.loc[i,'distance'] = top_matches.loc[0,'distance']
+
+        count=0
+        for i in top_matches.index[1:]:
+            if all([(abs((l - top_matches.loc[i,'start']))>20) for l in top_ten_filtered['start']])==True:
+                top_ten_filtered.loc[i,'start'] = top_matches.loc[i,'start']
+                top_ten_filtered.loc[i,'stop'] = top_matches.loc[i,'stop']
+                top_ten_filtered.loc[i,'distance'] = top_matches.loc[i,'distance']
+                count+=1
+                if count>8:
+                    break
+
+        # Calculate the forecast for the top 10 best matches
+
+        current_w_projs = []
+        for match, ix in zip(top_ten_filtered.index, np.arange(len(top_ten_filtered))):
+            historical_period = df.iloc[top_ten_filtered.loc[match]['start']:top_ten_filtered.loc[match]['stop']+30].reset_index(drop=True)
+            
+            combo = pd.concat([df.tail(90)['Return'],historical_period.iloc[-30:]['Return']]).reset_index(drop=True)
+            combo.name = ix
+
+            current_w_projs.append(combo)
+
+        data = pd.concat(current_w_projs,axis=1)
+        data['average'] = data.mean(axis=1)
+        data_proj_only = data.iloc[-30:]
+        data = (1+data).cumprod()
+
+        context = {
+            "average": data['average'].values.tolist(),
+            'stock': stock_ticker,
+            }
+    else:
+
+        context = {
+            "average": [],
+            'stock': 'Enter Stock Ticker To Calulcate Analog',
+            }
+        
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse(context)
+    else:
+        return render(request, 'analogs.html', context=context)
+    
+
+
+    
 def landing(request):
     return render(request, 'landing.html')
-    
+
+   
 
     
   
