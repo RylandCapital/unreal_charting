@@ -1,61 +1,61 @@
 <!doctype html>
-
+{% load static %}
 <html lang="en">
   <head>
     <style>
-        body {
-        font-family: Arial, sans-serif;
-      }
-      .sidebar {
-        width: 200px;
-        height: 100vh;
-        position: fixed;
-        left: 0;
-        top: 0;
-        background-color: #333;
-        color: white;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-      }
-      .sidebar a {
-        color: white;
-        text-decoration: none;
-      }
+      body {
+      font-family: Arial, sans-serif;
+    }
+    .sidebar {
+      width: 200px;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      background-color: #333;
+      color: white;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .sidebar a {
+      color: white;
+      text-decoration: none;
+    }
 
-      .input-container {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 20px;
-      }
-      
-      #stock-ticker {
-        font-size: 18px;
-        padding: 10px;
-      }
+    .input-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    
+    #stock-ticker {
+      font-size: 18px;
+      padding: 10px;
+    }
 
-      #update-chart {
-        font-size: 18px;
-        padding: 10px 20px;
-      }
+    #update-chart-analog {
+      font-size: 18px;
+      padding: 10px 20px;
+    }
 
-      #container {
-        max-width: 70%;
-        margin-left: auto;
-        margin-right: auto;
-      }   
-    </style>
+    #container {
+      max-width: 70%;
+      margin-left: auto;
+      margin-right: auto;
+    }   
+  </style>
   </head>
   <body>
     <div class="sidebar">
-      <h2>Analysis</h2>
+      <img src="{% static 'logo.png' %}" alt="Logo" />
       <a href="{% url 'anchored' %}">Home</a>
       <a href="{% url 'vwaps' %}">Anchored VWAPS</a>
       <a href="{% url 'analogs' %}">Analogs</a>
     </div>
 	  <div class="content">
-    <div class="input-container">
+    <div class="input-container" style="margin: 20px auto;">
       <input type="text" id="stock-ticker" placeholder="Enter stock ticker">
       <button id="update-chart">Update Chart</button>
     </div>
@@ -277,7 +277,8 @@
     </script>
     
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
     
 
