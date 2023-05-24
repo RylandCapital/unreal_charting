@@ -2,6 +2,7 @@
 {% load static %}
 <html lang="en">
   <head>
+    <!--... Your other codes ...-->
     <style>
         body {
         font-family: Arial, sans-serif;
@@ -24,10 +25,27 @@
         text-decoration: none;
       }
 
+      .content-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-left: 220px; /* Sidebar width + some additional space */
+      }
+
+      .content {
+        width: 100%;
+        display: flex;
+      }
+
+      #checkbox-container {
+        margin: 20px;
+      }
+
       .input-container {
         display: flex;
         justify-content: center;
         margin-bottom: 20px;
+        width: 100%;
       }
       
       #stock-ticker {
@@ -41,9 +59,9 @@
       }
 
       #container {
-        max-width: 70%;
-        margin-left: auto;
-        margin-right: auto;
+        flex-grow: 1; /* This allows the chart to take the remaining space */
+        height: 1000px;
+        margin: 20px;
       }   
     </style>
   </head>
@@ -54,21 +72,29 @@
       <a href="{% url 'vwaps' %}">Anchored VWAPS</a>
       <a href="{% url 'analogs' %}">Analogs</a>
     </div>
-	<div class="content">
-    <div class="input-container" style="margin: 20px auto;">
-      <input type="text" id="stock-ticker-analog" placeholder="Enter stock ticker">
-      <button id="update-chart-analog">Update Chart</button>
+    <div class="content-wrapper">
+        <div class="content">
+            <div id="checkbox-container">
+                <input type="checkbox" id="average-check" name="series" value="mean" checked> Average<br>
+                <input type="checkbox" id="zero-check" name="series" value="median" checked> Median<br>
+                <input type="checkbox" id="one-check" name="series" value="bestfit" checked> BestFit<br>
+            </div>
+            <!-- Highcharts display -->
+            <div class="border" id="container"></div>
+        </div>
+        <div class="input-container">
+            <input type="text" id="stock-ticker-analog" placeholder="Enter stock ticker">
+            <button id="update-chart-analog">Update Chart</button>
+        </div>
+        <!-- Spinner -->
+        <div id="spinner-container" style="display: none; margin: 20px auto; text-align: center;">
+            <div class="spinner-border text-primary" role="status"></div>
+            <div>Loading... Calculations Take ~ 1 Minute</div>
+        </div>
     </div>
-    <!-- Spinner -->
-    <div id="spinner-container" style="display: none; margin: 20px auto; text-align: center;">
-        <div class="spinner-border text-primary" role="status"></div>
-        <div>Loading... Takes ~ 30 Seconds</div>
-    </div>
-    <!-- Highcharts display -->
-    <div class="border" id="container" style="min-width: 310px; height: 1000px; margin: 0 auto"></div>
-	</div>
-    </body>
-    </html>
+  </body>
+
+
     
     <!-- Chartjs libraries -->
     <script src="https://code.highcharts.com/highcharts.js"></script>
@@ -80,52 +106,102 @@
 
     <script>
         
-        function updateChart(stockTicker) {
-            // Show the spinner
-            document.getElementById('spinner-container').style.display = 'block';
+        // These will store your fetched data
+    var average, median, bestfit;
 
-            fetch('/anchored/analogs?stock_ticker_analog=' + stockTicker, {
-                headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/json'
-                }
-            })
-            .then(response => {
-                console.log(response)
-                if (response.ok) {
-                return response.json();
-                } else {
-                throw new Error('Failed to fetch data for stock ticker: ' + stockTicker);
-                }
-            })
-            .then(d => {
-                average = d.average;
-                stock = d.stock;
+    function updateChart(stockTicker) {
+        // Show the spinner
+        document.getElementById('spinner-container').style.display = 'block';
 
-                chart.update({
-                title: {
-                    text: stock
-                },
-                subtitle: {
-                    text: stock
-                },
-                series: [
-                {
-                    data: average
-                }
-                ]
-                });
+        fetch('/anchored/analogs?stock_ticker_analog=' + stockTicker, {
+            headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+            return response.json();
+            } else {
+            throw new Error('Failed to fetch data for stock ticker: ' + stockTicker);
+            }
+        })
+        .then(d => {
+            // Store your fetched data
+            average = d.average;
+            median = d.median;
+            bestfit = d.bestfit;
 
-                // Hide the spinner
-                document.getElementById('spinner-container').style.display = 'none';
-            })
-            .catch(error => {
-                console.error('Error:', error);
+            stock = d.stock;
 
-                // Hide the spinner
-                document.getElementById('spinner-container').style.display = 'none';
+            // Update the chart using your fetched data
+            updateSeries();
+
+            // Hide the spinner
+            document.getElementById('spinner-container').style.display = 'none';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+
+            // Hide the spinner
+            document.getElementById('spinner-container').style.display = 'none';
+        });
+    }
+
+    // New function to update the series
+    function updateSeries() {
+        
+        var series = [];
+
+        // Check if each checkbox is checked, and if so, add the corresponding data to the series
+        if (document.getElementById('average-check').checked) {
+            series.push({
+                data: average,
+                name: 'average'
+            });
+        } else {
+            series.push({
+                data: [],
+                name: 'average'
             });
         }
+        if (document.getElementById('zero-check').checked) {
+            series.push({
+                data: median,
+                name: 'median'
+            });
+        } else {
+            series.push({
+                data: [],
+                name: 'median'
+            });
+        }
+        if (document.getElementById('one-check').checked) {
+            series.push({
+                data: bestfit,
+                name: 'bestfit'
+            });
+        } else {
+            series.push({
+                data: [],
+                name: 'bestfit'
+            });
+        }
+
+        console.log(series)
+
+        // Update the chart with the new series
+        chart.update({
+            series: series
+        })
+        ;
+    }
+
+        // Update the chart when the checkboxes change
+        document.getElementById('average-check').addEventListener('change', updateSeries);
+        document.getElementById('zero-check').addEventListener('change', updateSeries);
+        document.getElementById('one-check').addEventListener('change', updateSeries);
+
 
 
         document.getElementById('update-chart-analog').addEventListener('click', function () {
@@ -140,7 +216,7 @@
       average = {{ average |safe }}
       stock = '{{ stock|safe }}'
 
-      console.log(average)
+
 
       chart = Highcharts.chart('container', {
             title: {
@@ -157,13 +233,18 @@
 
             plotOptions: {
                 series: {
-                    marker: {
-                        enabled: false,
-                        states: {
-                            hover: {
-                                enabled: false
-                            }
+                    states: {
+                        hover:{
+                            enabled:false
                         }
+                    },
+                marker: {
+                    enabled: false,
+                    states: {
+                        hover: {
+                            enabled: false
+                        }
+                    }
                     }
                 }
             },
@@ -208,8 +289,27 @@
             series: [{
                 data: average,
                 lineWidth: 5,
-                name: 'Days (89-119 is projected next 30 days)'
-            }]
+                name: 'average',
+                opacity:1
+            },
+            {
+                data: average,
+                lineWidth:5,
+                name: 'median',
+                color:'grey',
+                opacity:1
+
+            },
+            {
+                data: average,
+                lineWidth:5,
+                name: 'bestfit',
+                color:'orange',
+                opacity:1
+
+            },
+            ],
+
         });
 
 

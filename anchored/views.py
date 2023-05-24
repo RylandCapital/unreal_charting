@@ -77,7 +77,6 @@ def get_daily_equity(request):
     else:
         return render(request, 'index.html', context=context)
     
-
 def get_analogs(request):
     
     stock_ticker = request.GET.get('stock_ticker_analog', '')
@@ -96,8 +95,8 @@ def get_analogs(request):
 
 
         # Compute log-returns
-        df['Return'] = df['close'].pct_change()
-        df['LogReturn'] = np.log1p(df['close'].pct_change())
+        df['Return'] = df['adjusted_close'].pct_change()
+        df['LogReturn'] = np.log1p(df['adjusted_close'].pct_change())
 
 
 
@@ -112,7 +111,7 @@ def get_analogs(request):
         # Loop over historical periods and find the best matches
         for i in range(90, len(df) - 90):
 
-            historical_period = df.iloc[i-90:i][['close','LogReturn']]
+            historical_period = df.iloc[i-90:i][['adjusted_close','LogReturn']]
             distance = dtw.distance(current_period, historical_period['LogReturn'].to_numpy())
             
             top_matches.loc[i,'start'] = i-90
@@ -150,11 +149,14 @@ def get_analogs(request):
 
         data = pd.concat(current_w_projs,axis=1)
         data['average'] = data.mean(axis=1)
+        data['median'] = data.median(axis=1)
         data_proj_only = data.iloc[-30:]
         data = (1+data).cumprod()
 
         context = {
             "average": data['average'].values.tolist(),
+            "median": data['median'].values.tolist(),
+            "bestfit": data[0].values.tolist(),
             'stock': stock_ticker,
             }
     else:
@@ -169,10 +171,7 @@ def get_analogs(request):
         return JsonResponse(context)
     else:
         return render(request, 'analogs.html', context=context)
-    
-
-
-    
+     
 def landing(request):
     return render(request, 'landing.html')
 
