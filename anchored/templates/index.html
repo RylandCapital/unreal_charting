@@ -177,6 +177,12 @@
             name: 'Vol Lock',
             data: vwap3,
             },
+            {
+            type: 'line',
+            name: 'Vol Lock', //this is a placeholder duplicate
+            data: vwap3,
+            color: 'orange'
+            },
           ]
             });
           })
@@ -185,6 +191,96 @@
           });
       }
 
+      function addAnchor(stockTicker, anchorDate) {
+        fetch('/anchored/vwaps?stock_ticker=' + stockTicker + '&anchor_date=' + anchorDate, {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(response => {
+            console.log(response)
+            if (response.ok) {
+              return response.json();
+            } else {
+              throw new Error('Failed to fetch data for stock ticker: ' + stockTicker);
+            }
+          })
+          .then(d => {
+            data = d.data;
+            vwap1 = d.maxloc;
+            vwap2 = d.minloc;
+            vwap3 = d.volloc;
+            stock =  d.stock;
+            miny = d.miny;
+            maxy =  d.maxy;
+            vwapc = d.customloc
+
+            console.log(vwapc)
+
+            let avgDiff = 0;
+            for (let i = 1; i < data.length; i++) {
+              avgDiff += data[i][0] - data[i - 1][0];
+            }
+            avgDiff /= data.length - 1;
+
+            // Generate 10 fake data points
+            const futureDataPoints = 30;
+            const fakeData = [];
+            let lastDate = data[data.length - 1][0];
+            for (let i = 0; i < futureDataPoints; i++) {
+              lastDate += avgDiff;
+              fakeData.push([lastDate, 0, 0, 0, 0]);
+            }
+
+            // Append the fake data points to the data array
+            data = data.concat(fakeData);
+            
+            chart.update({
+              title: {
+                text: stock
+            },
+            yAxis: {
+            min:miny,
+            max:maxy,
+            labels:{
+              align:'left'
+            }
+            },
+            series: [
+            {
+            type: 'candlestick',
+            name: stock,
+            data: data,   
+            },
+            {
+            type: 'line',
+            name: 'High Lock',
+            data: vwap1,
+            },
+            {
+            type: 'line',
+            name: 'Min Lock',
+            data: vwap2,
+            },
+            {
+            type: 'line',
+            name: 'Vol Lock',
+            data: vwap3,
+            },
+            {
+            type: 'line',
+            name: 'Custom Lock',
+            color: 'grey',
+            data: vwapc,
+            },
+          ]
+            });
+          })
+          .catch(error => {
+            console.error('Error:', error);
+          });
+      }
       document.getElementById('update-chart').addEventListener('click', function () {
         var stockTicker = document.getElementById('stock-ticker').value;
         updateChart(stockTicker);
@@ -193,7 +289,7 @@
       document.getElementById('date-picker').addEventListener('change', function() {
         var stockTicker = document.getElementById('stock-ticker').value;
         var anchorDate = this.value;
-        updateChart(stockTicker, anchorDate);
+        addAnchor(stockTicker, anchorDate);
       });
       
       data = {{ data|safe }}
@@ -285,6 +381,14 @@
             name: 'Low Lock',
             data: vwap2,
             color: 'blue',
+            lineWidth: 3,
+            dashStyle: 'Dash',
+          },
+          {
+            type: 'line',
+            name: 'Vol Lock',
+            data: vwap3,
+            color: 'orange',
             lineWidth: 3,
             dashStyle: 'Dash',
           },

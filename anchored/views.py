@@ -24,7 +24,7 @@ EOD = os.getenv("EOD")
 def get_daily_equity(request):
 
     stock_ticker = request.GET.get('stock_ticker', 'AAPL')
-    anchor_date = request.GET.get('anchor_date', dt.datetime.today())
+    anchor_date = request.GET.get('anchor_date', dt.datetime.today().strftime('%Y-%m-%d'))
 
     stop = dt.datetime.today()
     start = stop - relativedelta(years=1)
@@ -41,6 +41,8 @@ def get_daily_equity(request):
     df['adjusted_high'] = (df['high']/df['adj_ratio']).round(2)
     df['adjusted_low'] = (df['low']/df['adj_ratio']).round(2)
 
+
+    #get index values for all custom vwaps
     max_idx = argrelextrema(df['adjusted_close'].values, np.greater, order=1)[0]
     max_values = [df['adjusted_close'].iloc[x] for x in max_idx]
     maxloc = max_idx[max_values.index(max(max_values))]
@@ -48,12 +50,22 @@ def get_daily_equity(request):
     min_values = [df['adjusted_close'].iloc[x] for x in min_idx]
     minloc = min_idx[min_values.index(min(min_values))]
 
+    try:
+        customloc = df[df['date']==anchor_date].index[0]
+    except:
+        customloc = None
+
     vol_nodes = df['volume'].iloc[125:].nlargest(1).index
+
+
 
     df['vwap_maxloc'] = (df['adjusted_close'] * df['volume']).iloc[maxloc:].expanding().sum() / \
                       df['volume'].iloc[maxloc:].expanding().sum()
     df['vwap_minloc'] = (df['adjusted_close'] * df['volume']).iloc[minloc:].expanding().sum() / \
                       df['volume'].iloc[minloc:].expanding().sum()
+    if customloc != None:
+        df['vwap_customloc'] = (df['adjusted_close'] * df['volume']).iloc[customloc:].expanding().sum() / \
+                        df['volume'].iloc[customloc:].expanding().sum()
     
     df['vwap_highvol'] = (df['adjusted_close'] * df['volume']).iloc[vol_nodes[0]:].expanding().sum() / \
                       df['volume'].iloc[vol_nodes[0]:].expanding().sum()
@@ -62,16 +74,34 @@ def get_daily_equity(request):
     data = [[int(x[0]*1000),x[1],x[2],x[3],x[4]] for x in df[['date','adjusted_open','adjusted_high', 'adjusted_low','adjusted_close']].values.tolist()]
     maxloc = [[int(x[0]*1000),x[1],x[2],x[3],x[4]] for x in df[['date','vwap_maxloc','vwap_maxloc','vwap_maxloc','vwap_maxloc']].dropna().values.tolist()]
     minloc = [[int(x[0]*1000),x[1],x[2],x[3],x[4]] for x in df[['date','vwap_minloc','vwap_minloc','vwap_minloc','vwap_minloc']].dropna().values.tolist()]
+    if customloc != None:
+        customloc = [[int(x[0]*1000),x[1],x[2],x[3],x[4]] for x in df[['date','vwap_customloc','vwap_customloc','vwap_customloc','vwap_customloc']].dropna().values.tolist()]
     volloc = [[int(x[0]*1000),x[1],x[2],x[3],x[4]] for x in df[['date','vwap_highvol','vwap_highvol','vwap_highvol','vwap_highvol']].dropna().values.tolist()]
-    context = {
-        "data": data,
-        "maxloc":maxloc,
-        "minloc":minloc,
-        "volloc":volloc,
-        'stock': stock_ticker,
-        "miny": df['adjusted_low'].min()*.98,
-        "maxy": df['adjusted_high'].max()*1.02
-        }
+    
+    if customloc != None:
+        context = {
+            "data": data,
+            "maxloc":maxloc,
+            "minloc":minloc,
+            "volloc":volloc,
+            'stock': stock_ticker,
+            'anchor_date':anchor_date,
+            "miny": df['adjusted_low'].min()*.98,
+            "maxy": df['adjusted_high'].max()*1.02,
+            "customloc":customloc
+            }
+    else:
+        context = {
+            "data": data,
+            "maxloc":maxloc,
+            "minloc":minloc,
+            "volloc":volloc,
+            'stock': stock_ticker,
+            'anchor_date':anchor_date,
+            "miny": df['adjusted_low'].min()*.98,
+            "maxy": df['adjusted_high'].max()*1.02,    
+            }
+
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse(context)
