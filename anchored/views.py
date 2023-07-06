@@ -24,6 +24,7 @@ EOD = os.getenv("EOD")
 def get_daily_equity(request):
 
     stock_ticker = request.GET.get('stock_ticker', 'AAPL')
+    anchor_date = request.GET.get('anchor_date', dt.datetime.today())
 
     stop = dt.datetime.today()
     start = stop - relativedelta(years=1)
@@ -40,10 +41,10 @@ def get_daily_equity(request):
     df['adjusted_high'] = (df['high']/df['adj_ratio']).round(2)
     df['adjusted_low'] = (df['low']/df['adj_ratio']).round(2)
 
-    max_idx = argrelextrema(df['adjusted_close'].iloc[:-14].values, np.greater, order=14)[0]
+    max_idx = argrelextrema(df['adjusted_close'].values, np.greater, order=1)[0]
     max_values = [df['adjusted_close'].iloc[x] for x in max_idx]
     maxloc = max_idx[max_values.index(max(max_values))]
-    min_idx = argrelextrema(df['adjusted_close'].values, np.less, order=14)[0]
+    min_idx = argrelextrema(df['adjusted_close'].values, np.less, order=1)[0]
     min_values = [df['adjusted_close'].iloc[x] for x in min_idx]
     minloc = min_idx[min_values.index(min(min_values))]
 

@@ -44,7 +44,23 @@
       max-width: 70%;
       margin-left: auto;
       margin-right: auto;
-    }   
+    }
+    
+    .inline-label { 
+    white-space: nowrap;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-left:25px;   
+    margin-right:10px;   
+    }
+
+    .label-input-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+    }
   </style>
   </head>
   <body>
@@ -53,12 +69,30 @@
     
 	  <div class="content">
     <div class="input-container" style="margin: 20px auto;">
-      <input type="text" id="stock-ticker" placeholder="Enter stock ticker">
+      <input type="text" id="stock-ticker" placeholder="Enter stock ticker", value='AAPL'>
       <button id="update-chart">Update Chart</button>
+      <div class="label-input-container">
+        <label for="DOB" class="inline-label">Add Custom Anchor:</label>
+        <input type="date" id="date-picker" name="DOB"min="1979-01-01" max="2040-12-31">
+      </div>
     </div>
     <!-- Highcharts display -->
     <div class="border" id="container" style="min-width: 310px; height: 1000px; margin: 0 auto"></div>
 	  </div>
+
+    <script>
+      var today = new Date();
+      var pastYear = new Date();
+
+      pastYear.setFullYear(today.getFullYear() - 1);
+
+      var todayFormatted = today.toISOString().split('T')[0];
+      var pastYearFormatted = pastYear.toISOString().split('T')[0];
+
+      document.getElementById("date-picker").setAttribute("max", todayFormatted);
+      document.getElementById("date-picker").setAttribute("min", pastYearFormatted);
+    </script>
+
     </body>
     </html>
     
@@ -69,8 +103,8 @@
     <script src="https://code.highcharts.com/stock/modules/accessibility.js"></script>
     
     <script>
-      function updateChart(stockTicker) {
-        fetch('/anchored/vwaps?stock_ticker=' + stockTicker, {
+      function updateChart(stockTicker, anchorDate) {
+        fetch('/anchored/vwaps?stock_ticker=' + stockTicker + '&anchor_date=' + anchorDate, {
           headers: {
             'X-Requested-With': 'XMLHttpRequest',
             'Content-Type': 'application/json'
@@ -135,12 +169,12 @@
             },
             {
             type: 'line',
-            name: 'High Lock',
+            name: 'Min Lock',
             data: vwap2,
             },
             {
             type: 'line',
-            name: 'High Lock',
+            name: 'Vol Lock',
             data: vwap3,
             },
           ]
@@ -154,6 +188,12 @@
       document.getElementById('update-chart').addEventListener('click', function () {
         var stockTicker = document.getElementById('stock-ticker').value;
         updateChart(stockTicker);
+      });
+
+      document.getElementById('date-picker').addEventListener('change', function() {
+        var stockTicker = document.getElementById('stock-ticker').value;
+        var anchorDate = this.value;
+        updateChart(stockTicker, anchorDate);
       });
       
       data = {{ data|safe }}
