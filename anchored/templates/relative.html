@@ -175,6 +175,8 @@
       maxy = {{ maxy|safe }}
       high = {{ high|safe }}
       low = {{ low|safe }}
+      high2 = {{ high2|safe }}
+      low2 = {{ low2|safe }}
       num = "{{num|safe}}"
       denom = "{{denom|safe}}"
 
@@ -241,25 +243,43 @@
           plotLines: [{
                         value: high,
                         width: 2,
-                        color: 'black',
+                        color: 'grey',
                         dashStyle: 'dash',
                       },
                       {
                         value: low,
                         width: 2,
-                        color: 'black',
+                        color: 'grey',
                         dashStyle: 'dash',
                       },  
+                      {
+                        value: high2,
+                        width: 3,
+                        color: 'black',
+                        dashStyle: 'dash',
+                      },
+                      {
+                        value: low2,
+                        width: 3,
+                        color: 'black',
+                        dashStyle: 'dash',
+                      }, 
+                      {
+                        value: 0,
+                        width: 1,
+                        color: 'black',
+                   
+                      },
                 ]
         },
         series: [
           {
             type: 'line',
-            name: '8 Day Return Diff',
+            name: '34 Day Return Diff',
             data: df1,
             color: 'blue',
             lineWidth: 1,
-            dashStyle: 'Dash',
+            
           },
           {
             type: 'line',
@@ -267,7 +287,7 @@
             data: df2,
             color: 'red',
             lineWidth: 2,
-            dashStyle: 'Dash',
+          
           },
           {
             type: 'line',
@@ -275,7 +295,7 @@
             data: df3,
             color: 'orange',
             lineWidth: 3,
-            dashStyle: 'Dash',
+          
           },
         ],
         plotOptions: {

@@ -234,7 +234,7 @@ def rolling_comparison(request):
     num.set_index('date', inplace=True)
     denom.set_index('date', inplace=True)
 
-    df = (num['adjusted_close'].pct_change(periods=8).rank(pct=True)-denom['adjusted_close'].pct_change(periods=8).rank(pct=True)).reset_index()
+    df = (num['adjusted_close'].pct_change(periods=34).rank(pct=True)-denom['adjusted_close'].pct_change(periods=34).rank(pct=True)).reset_index()
     fiftydf = (num['adjusted_close'].pct_change(periods=55).rank(pct=True)-denom['adjusted_close'].pct_change(periods=55).rank(pct=True)).reset_index()
     eightydf = (num['adjusted_close'].pct_change(periods=89).rank(pct=True)-denom['adjusted_close'].pct_change(periods=89).rank(pct=True)).reset_index()
 
@@ -243,8 +243,20 @@ def rolling_comparison(request):
     fiftydata = [[int(x[0]*1000),x[1],x[2],x[3],x[4]] for x in fiftydf.dropna()[['date','adjusted_close','adjusted_close', 'adjusted_close','adjusted_close']].values.tolist()]
     eightydata = [[int(x[0]*1000),x[1],x[2],x[3],x[4]] for x in eightydf.dropna()[['date','adjusted_close','adjusted_close', 'adjusted_close','adjusted_close']].values.tolist()]
     
-    high = (df.quantile(.95)['adjusted_close'] + fiftydf.quantile(.95)['adjusted_close'] + eightydf.quantile(.95)['adjusted_close'])/3
-    low = (df.quantile(.05)['adjusted_close'] + fiftydf.quantile(.05)['adjusted_close'] + eightydf.quantile(.05)['adjusted_close'])/3
+
+    high = ((df['adjusted_close'].mean()+df['adjusted_close'].std()*2) + \
+            (fiftydf['adjusted_close'].mean()+(fiftydf['adjusted_close'].std()*2)) + \
+            (eightydf['adjusted_close'].mean()+eightydf['adjusted_close'].std()*2))/3
+    low = ((df['adjusted_close'].mean()-df['adjusted_close'].std()*2) + \
+            (fiftydf['adjusted_close'].mean()-fiftydf['adjusted_close'].std()*2) + \
+            (eightydf['adjusted_close'].mean()-eightydf['adjusted_close'].std()*2))/3
+    high2 = ((df['adjusted_close'].mean()+df['adjusted_close'].std()*3) + \
+            (fiftydf['adjusted_close'].mean()+(fiftydf['adjusted_close'].std()*3)) + \
+            (eightydf['adjusted_close'].mean()+eightydf['adjusted_close'].std()*3))/3
+    low2 = ((df['adjusted_close'].mean()-df['adjusted_close'].std()*3) + \
+            (fiftydf['adjusted_close'].mean()-fiftydf['adjusted_close'].std()*3) + \
+            (eightydf['adjusted_close'].mean()-eightydf['adjusted_close'].std()*3))/3
+
     context = {'data':data,
                'df1':dfdata,
                'df2':fiftydata,
@@ -255,6 +267,8 @@ def rolling_comparison(request):
                "denom":stock2,
                "high":high,
                "low":low,
+               "high2":high2,
+               "low2":low2,
                }
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
