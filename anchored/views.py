@@ -202,7 +202,66 @@ def get_analogs(request):
         return JsonResponse(context)
     else:
         return render(request, 'analogs.html', context=context)
-     
+
+def rolling_comparison(request):
+
+    stock1 = request.GET.get('stock1', 'RSP')
+    stock2 = request.GET.get('stock2', 'SPY')
+
+    stop = dt.datetime.today()
+    start = stop - relativedelta(years=10)
+
+    req1 = requests.get('https://eodhistoricaldata.com/api/eod' +
+                       '/{0}.US?api_token={1}&fmt=json'.format(stock1, EOD) +
+                       '&period=d&from={0}&to={1}'.format(start.strftime('%Y-%m-%d'),
+                                                          stop.strftime('%Y-%m-%d')
+                                                          ))
+    req2 = requests.get('https://eodhistoricaldata.com/api/eod' +
+                       '/{0}.US?api_token={1}&fmt=json'.format(stock2, EOD) +
+                       '&period=d&from={0}&to={1}'.format(start.strftime('%Y-%m-%d'),
+                                                          stop.strftime('%Y-%m-%d')
+                                                          ))
+    num = pd.DataFrame.from_dict(req1.json())
+    num['adj_ratio'] = num['close']/num['adjusted_close']
+    num['adjusted_open'] = (num['open']/num['adj_ratio']).round(2)
+    num['adjusted_high'] = (num['high']/num['adj_ratio']).round(2)
+    num['adjusted_low'] = (num['low']/num['adj_ratio']).round(2)
+
+    denom = pd.DataFrame.from_dict(req2.json())
+
+    num['date'] = num['date'].apply(lambda x: int(time.mktime(dt.datetime.strptime(x, "%Y-%m-%d").timetuple())))
+    denom['date'] = denom['date'].apply(lambda x: int(time.mktime(dt.datetime.strptime(x, "%Y-%m-%d").timetuple())))
+    num.set_index('date', inplace=True)
+    denom.set_index('date', inplace=True)
+
+    df = (num['adjusted_close'].pct_change(periods=8).rank(pct=True)-denom['adjusted_close'].pct_change(periods=8).rank(pct=True)).reset_index()
+    fiftydf = (num['adjusted_close'].pct_change(periods=55).rank(pct=True)-denom['adjusted_close'].pct_change(periods=55).rank(pct=True)).reset_index()
+    eightydf = (num['adjusted_close'].pct_change(periods=89).rank(pct=True)-denom['adjusted_close'].pct_change(periods=89).rank(pct=True)).reset_index()
+
+    data = [[int(x[0]*1000),x[1],x[2],x[3],x[4]] for x in num.reset_index()[['date','adjusted_open','adjusted_high', 'adjusted_low','adjusted_close']].values.tolist()]
+    dfdata = [[int(x[0]*1000),x[1],x[2],x[3],x[4]] for x in df.dropna()[['date','adjusted_close','adjusted_close', 'adjusted_close','adjusted_close']].values.tolist()]
+    fiftydata = [[int(x[0]*1000),x[1],x[2],x[3],x[4]] for x in fiftydf.dropna()[['date','adjusted_close','adjusted_close', 'adjusted_close','adjusted_close']].values.tolist()]
+    eightydata = [[int(x[0]*1000),x[1],x[2],x[3],x[4]] for x in eightydf.dropna()[['date','adjusted_close','adjusted_close', 'adjusted_close','adjusted_close']].values.tolist()]
+    
+    high = (df.quantile(.95)['adjusted_close'] + fiftydf.quantile(.95)['adjusted_close'] + eightydf.quantile(.95)['adjusted_close'])/3
+    low = (df.quantile(.05)['adjusted_close'] + fiftydf.quantile(.05)['adjusted_close'] + eightydf.quantile(.05)['adjusted_close'])/3
+    context = {'data':data,
+               'df1':dfdata,
+               'df2':fiftydata,
+               'df3':eightydata,
+               "miny": -1,
+               "maxy": 1,
+               "num":stock1,
+               "denom":stock2,
+               "high":high,
+               "low":low,
+               }
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse(context)
+    else:
+        return render(request, 'relative.html', context=context)
+
 def landing(request):
     return render(request, 'landing.html')
 

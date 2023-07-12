@@ -1,0 +1,302 @@
+<!doctype html>
+{% load static %}
+<html lang="en">
+  <head>
+    <style>
+      body {
+      font-family: Arial, sans-serif;
+    }
+    .sidebar {
+      width: 200px;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      background-color: #333;
+      color: white;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .sidebar a {
+      color: white;
+      text-decoration: none;
+    }
+
+    .input-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    
+    #stock-ticker {
+      font-size: 18px;
+      padding: 10px;
+    }
+
+    #update-chart-analog {
+      font-size: 18px;
+      padding: 10px 20px;
+    }
+
+    #container {
+      max-width: 70%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .inline-label { 
+    white-space: nowrap;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-left:25px;   
+    margin-right:10px;   
+    }
+
+    .label-input-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+    }
+  </style>
+  </head>
+  <body>
+
+    {% include "sidebar.html" %}
+    
+	  <div class="content">
+    <div class="input-container" style="margin: 20px auto;">
+      <input type="text" id="stock-ticker" placeholder="Enter Stock Ratio", value='RSP/SPY'>
+      <button id="update-chart">Update Chart</button>
+    </div>
+    <!-- Highcharts display -->
+    <div class="border" id="container" style="min-width: 310px; height: 1000px; margin: 0 auto"></div>
+	  </div>
+    </body>
+    </html>
+    
+    <!-- Chartjs libraries -->
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/data.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/stock/modules/accessibility.js"></script>
+    
+    <script>
+      function updateChart(ratio) {
+        const myArray = ratio.split("/");
+        fetch('/anchored/relative?stock1=' + myArray[0] + '&stock2=' + myArray[1], {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(response => {
+            console.log(response)
+            if (response.ok) {
+              return response.json();
+            } else {
+              throw new Error('Failed to fetch data for stock ticker: ' + stockTicker1);
+            }
+          })
+          .then(d => {
+            data = d.data;
+            df1 = d.df1;
+            df2 = d.df2;
+            df3 = d.df3;
+            miny = d.miny;
+            maxy = d.maxy;
+            high = d.high;
+            low = d.low;
+            num = d.num;
+            denom = d.denom;
+
+            let avgDiff = 0;
+            for (let i = 1; i < data.length; i++) {
+              avgDiff += data[i][0] - data[i - 1][0];
+            }
+            avgDiff /= data.length - 1;
+
+            // Generate 10 fake data points
+            const futureDataPoints = 30;
+            const fakeData = [];
+            let lastDate = data[data.length - 1][0];
+            for (let i = 0; i < futureDataPoints; i++) {
+              lastDate += avgDiff;
+              fakeData.push([lastDate, 0, 0, 0, 0]);
+            }
+
+            // Append the fake data points to the data array
+            data = data.concat(fakeData);
+            
+            chart.update({
+              title: {
+                text: num + '/' + denom
+            },
+            yAxis: {
+            min:miny,
+            max:maxy,
+            labels:{
+              align:'left'
+            }
+            },
+            series: [
+            {
+            type: 'line',
+            data: df1,
+            },
+            {
+            type: 'line',
+            data: df2,
+            },
+            {
+            type: 'line',
+            data: df3,
+            },
+          ]
+            });
+          })
+          .catch(error => {
+            console.error('Error:', error);
+          });
+      }
+      document.getElementById('update-chart').addEventListener('click', function () {
+        var stockTicker = document.getElementById('stock-ticker').value;
+        updateChart(stockTicker);
+      });
+
+      data = {{ data|safe }}
+      df1 = {{ df1|safe }}
+      df2 = {{ df2|safe }}
+      df3 = {{ df3|safe }}
+      miny = {{ miny|safe }}
+      maxy = {{ maxy|safe }}
+      high = {{ high|safe }}
+      low = {{ low|safe }}
+      num = "{{num|safe}}"
+      denom = "{{denom|safe}}"
+
+      let avgDiff = 0;
+      for (let i = 1; i < data.length; i++) {
+        avgDiff += data[i][0] - data[i - 1][0];
+      }
+      avgDiff /= data.length - 1;
+
+      // Generate 10 fake data points
+      const futureDataPoints = 30;
+      const fakeData = [];
+      let lastDate = data[data.length - 1][0];
+      for (let i = 0; i < futureDataPoints; i++) {
+        lastDate += avgDiff;
+        fakeData.push([lastDate, 0, 0, 0, 0]);
+      }
+
+      // Append the fake data points to the data array
+      data = data.concat(fakeData);
+      
+      
+      console.log(data)
+
+      chart = Highcharts.stockChart('container', {
+        tooltip: {
+        enabled: false
+        },
+        navigator: {
+            enabled: false
+        },
+        legend: {
+        enabled: true,
+       },
+        rangeSelector: {
+          selected: 1,
+          enabled: false, // Disable the zoom buttons
+        },
+        title: {
+          text: num + '/' + denom
+        },
+        xAxis: {
+          crosshair: {
+            snap: false,
+            label: {
+                    enabled: true,  
+                },
+          },
+        },
+        yAxis: {
+          min:miny,
+          max:maxy,
+          labels:{
+            align:'left'
+          },
+          crosshair: {
+            snap: false,
+            label: {
+                    enabled: true,
+                    format: '{value:.2f}',
+                    align:'left'
+                },    
+          },
+          plotLines: [{
+                        value: high,
+                        width: 2,
+                        color: 'black',
+                        dashStyle: 'dash',
+                      },
+                      {
+                        value: low,
+                        width: 2,
+                        color: 'black',
+                        dashStyle: 'dash',
+                      },  
+                ]
+        },
+        series: [
+          {
+            type: 'line',
+            name: '8 Day Return Diff',
+            data: df1,
+            color: 'blue',
+            lineWidth: 1,
+            dashStyle: 'Dash',
+          },
+          {
+            type: 'line',
+            name: '55 Day Return Diff',
+            data: df2,
+            color: 'red',
+            lineWidth: 2,
+            dashStyle: 'Dash',
+          },
+          {
+            type: 'line',
+            name: '89 Day Return Diff',
+            data: df3,
+            color: 'orange',
+            lineWidth: 3,
+            dashStyle: 'Dash',
+          },
+        ],
+        plotOptions: {
+            series: {
+                states: {
+                    inactive: {
+                        opacity: 1
+                    }
+                }
+            }
+        }
+        });
+
+      document.getElementById('update-chart').addEventListener('click', function() {
+        var stockTicker = document.getElementById('stock-ticker').value;
+      });
+    </script>
+    
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+    
+
