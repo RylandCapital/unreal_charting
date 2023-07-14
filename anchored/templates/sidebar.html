@@ -1,8 +1,55 @@
 {% load static %}
+
+<style>
+  .dropdown {
+    position: relative;
+    display: inline-block;
+  }
+
+  .dropbtn {
+    background-color: #333; /* Same color as sidebar */
+    color: white; /* Text color */
+    padding: 0px 16px 0px 0px; /* top right bottom left */
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+  }
+
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f1f1f1;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+  }
+
+  .dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+  }
+
+  .dropdown-content a:hover {background-color: #ddd;}
+
+  .dropdown:hover .dropdown-content {display: block;}
+
+  .dropdown:hover .dropbtn {
+    background-color: #333; /* Color when hovering */
+  }
+</style>
+
 <div class="sidebar">
   <img src="{% static 'logo.png' %}" alt="Logo" />
   <a href="{% url 'anchored' %}">Home</a>
   <a href="{% url 'vwaps' %}">VWAPs</a>
-  <a href="{% url 'relative' %}">Ratios</a>
   <a href="{% url 'analogs' %}">Analogs</a>
+  <div class="dropdown">
+    <button class="dropbtn">Ratios</button>
+    <div class="dropdown-content">
+      <a href="{% url 'relative' %}">Ratio Chart</a>
+      <a href="{% url 'grid' %}" target="_blank">Run Scan</a>
+    </div>
+  </div>
 </div>

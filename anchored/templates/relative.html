@@ -110,8 +110,13 @@
             maxy = d.maxy;
             high = d.high;
             low = d.low;
+            high2 = d.high2;
+            low2 = d.low2;
             num = d.num;
             denom = d.denom;
+
+            console.log(high)
+            console.log(high2)
 
             let avgDiff = 0;
             for (let i = 1; i < data.length; i++) {
@@ -136,6 +141,37 @@
                 text: num + '/' + denom
             },
             yAxis: {
+              plotLines: [{
+                        value: high,
+                        width: 2,
+                        color: 'grey',
+                        dashStyle: 'dash',
+                      },
+                      {
+                        value: low,
+                        width: 2,
+                        color: 'grey',
+                        dashStyle: 'dash',
+                      },  
+                      {
+                        value: high2,
+                        width: 3,
+                        color: 'black',
+                        dashStyle: 'dash',
+                      },
+                      {
+                        value: low2,
+                        width: 3,
+                        color: 'black',
+                        dashStyle: 'dash',
+                      }, 
+                      {
+                        value: 0,
+                        width: 1,
+                        color: 'black',
+                   
+                      },
+                ],
             min:miny,
             max:maxy,
             labels:{
@@ -199,7 +235,11 @@
       data = data.concat(fakeData);
       
       
-      console.log(data)
+      Highcharts.setOptions({
+          time: {
+              timezone: 'Europe/Oslo'
+          }
+      });
 
       chart = Highcharts.stockChart('container', {
         tooltip: {

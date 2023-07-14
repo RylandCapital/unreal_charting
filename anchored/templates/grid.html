@@ -1,0 +1,137 @@
+<!doctype html>
+{% load static %}
+<head>
+    <style>
+        body {
+        font-family: Arial, sans-serif;
+        padding-left: 250px;
+      }
+      .sidebar {
+        width: 200px;
+        height: 100vh;
+        position: fixed;
+        left: 0;
+        top: 0;
+        background-color: #333;
+        color: white;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .sidebar a {
+        color: white;
+        text-decoration: none;
+      }
+  
+      .input-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      
+      #stock-ticker {
+        font-size: 18px;
+        padding: 10px;
+      }
+  
+      #update-chart-analog {
+        font-size: 18px;
+        padding: 10px 20px;
+      }
+  
+      #container {
+        max-width: 70%;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      
+      .inline-label { 
+      white-space: nowrap;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-left:25px;   
+      margin-right:10px;   
+      }
+  
+      .label-input-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+      }
+    </style>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
+</head>
+
+<script>
+    $(document).ready(function() {
+    $('#myTable').DataTable({
+        "pageLength": -1, 
+        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]]
+    });
+});
+</script>
+
+<body>
+{% include "sidebar.html" %}
+<table id="myTable">
+    <thead>
+    <tr>
+      <th>Index</th>
+      <th>34 Day Z-Score</th>
+      <th>55 Day Z-Score</th>
+      <th>89 Day Z-Score</th>
+      <th>Average Day Z-Score</th>
+    </tr>
+    </thead>
+    <tbody>
+  {% for row in grid %}
+    <tr>
+      <td>{{ row.0 }}</td>
+      <td style="
+          {% if row.1 >= 2 and row.1 < 2.5 %}background-color: #ff6666;
+          {% elif row.1 >= 2.5 %}background-color: red;
+          {% elif row.1 <= -2 and row.1 > -2.5 %}background-color: #90ee90;
+          {% elif row.1 < -2.5 %}background-color: green;
+          {% else %}background-color: white;
+          {% endif %}">
+          {{ row.1 }}
+      </td>
+      <!-- Repeat the same block for other columns -->
+      <td style="
+          {% if row.2 >= 2 and row.2 < 2.5 %}background-color: #ff6666;
+          {% elif row.2 >= 2.5 %}background-color: red;
+          {% elif row.2 <= -2 and row.2 > -2.5 %}background-color: #90ee90;
+          {% elif row.2 < -2.5 %}background-color: green;
+          {% else %}background-color: white;
+          {% endif %}">
+          {{ row.2 }}
+      </td>
+      <td style="
+          {% if row.3 >= 2 and row.3 < 2.5 %}background-color: #ff6666;
+          {% elif row.3 >= 2.5 %}background-color: red;
+          {% elif row.3 <= -2 and row.3 > -2.5 %}background-color: #90ee90;
+          {% elif row.3 < -2.5 %}background-color: green;
+          {% else %}background-color: white;
+          {% endif %}">
+          {{ row.3 }}
+      </td>
+      <td style="
+          {% if row.4 >= 2 and row.4 < 2.5 %}background-color: #ff6666;
+          {% elif row.4 >= 2.5 %}background-color: red;
+          {% elif row.4 <= -2 and row.4 > -2.5 %}background-color: #90ee90;
+          {% elif row.4 < -2.5 %}background-color: green;
+          {% else %}background-color: white;
+          {% endif %}">
+          {{ row.4 }}
+      </td>
+    </tr>
+  {% endfor %}
+    </tbody>
+   </table>  
+
+</body>

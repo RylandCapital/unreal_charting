@@ -276,6 +276,93 @@ def rolling_comparison(request):
     else:
         return render(request, 'relative.html', context=context)
 
+#django table table
+def rolling_comparison_grid(request):
+
+    ratios = [
+        #equal vs index
+        'RSP/SPY',
+        'QQQE/QQQ',
+        'EDOW/DIA',
+        #high beta low beta
+        'SPHB/SPLV',
+        #index cross
+        'QQQ/SPY',
+        'QQQ/DIA',
+        'DIA/SPY',
+        #growth vs value
+        'VUG/VTV',
+        #spyder indexes
+        'XLY/SPY',
+        'XLK/SPY',
+        'XLI/SPY',
+        'XLC/SPY',
+        'XLF/SPY',
+        'XLP/SPY',
+        'XLU/SPY',
+        'XLE/SPY',
+        'XLV/SPY',
+        'XLRE/SPY',
+        #cross sector
+        'SMH/XLK',
+        'XLY/XLP',
+        'HYG/TLT',
+        'OIH/XLE',
+        'XOP/XLE',
+        #custom
+        'ARKK/QQQ'
+    ]
+
+
+    grid = pd.DataFrame(columns=['34 Day Z-Score', '55 Day Z-Score', '89 Day Z-Score', 'Average Day Z-Score'])
+    for i in ratios:
+        stock1 = i.split('/')[0]
+        stock2 = i.split('/')[1]
+
+        stop = dt.datetime.today()
+        start = stop - relativedelta(years=10)
+
+        req1 = requests.get('https://eodhistoricaldata.com/api/eod' +
+                        '/{0}.US?api_token={1}&fmt=json'.format(stock1, EOD) +
+                        '&period=d&from={0}&to={1}'.format(start.strftime('%Y-%m-%d'),
+                                                            stop.strftime('%Y-%m-%d')
+                                                            ))
+        req2 = requests.get('https://eodhistoricaldata.com/api/eod' +
+                        '/{0}.US?api_token={1}&fmt=json'.format(stock2, EOD) +
+                        '&period=d&from={0}&to={1}'.format(start.strftime('%Y-%m-%d'),
+                                                            stop.strftime('%Y-%m-%d')
+                                                            ))
+        num = pd.DataFrame.from_dict(req1.json())
+        num['adj_ratio'] = num['close']/num['adjusted_close']
+        num['adjusted_open'] = (num['open']/num['adj_ratio']).round(2)
+        num['adjusted_high'] = (num['high']/num['adj_ratio']).round(2)
+        num['adjusted_low'] = (num['low']/num['adj_ratio']).round(2)
+
+        denom = pd.DataFrame.from_dict(req2.json())
+
+        num['date'] = num['date'].apply(lambda x: int(time.mktime(dt.datetime.strptime(x, "%Y-%m-%d").timetuple())))
+        denom['date'] = denom['date'].apply(lambda x: int(time.mktime(dt.datetime.strptime(x, "%Y-%m-%d").timetuple())))
+        num.set_index('date', inplace=True)
+        denom.set_index('date', inplace=True)
+
+        df = (num['adjusted_close'].pct_change(periods=34).rank(pct=True)-denom['adjusted_close'].pct_change(periods=34).rank(pct=True)).reset_index()
+        fiftydf = (num['adjusted_close'].pct_change(periods=55).rank(pct=True)-denom['adjusted_close'].pct_change(periods=55).rank(pct=True)).reset_index()
+        eightydf = (num['adjusted_close'].pct_change(periods=89).rank(pct=True)-denom['adjusted_close'].pct_change(periods=89).rank(pct=True)).reset_index()
+
+        z34 = ((df.iloc[-1]['adjusted_close'] - df['adjusted_close'].mean()) / df['adjusted_close'].std()).round(2)
+        z55 = ((fiftydf.iloc[-1]['adjusted_close'] - fiftydf['adjusted_close'].mean()) / fiftydf['adjusted_close'].std()).round(2)
+        z89 = ((eightydf.iloc[-1]['adjusted_close'] - eightydf['adjusted_close'].mean()) / eightydf['adjusted_close'].std()).round(2)
+
+        grid.loc[i,'34 Day Z-Score'] = z34
+        grid.loc[i,'55 Day Z-Score'] = z55
+        grid.loc[i, '89 Day Z-Score'] = z89
+        grid.loc[i, 'Average Day Z-Score'] = round((z34+z55+z89)/3,2)
+
+        context = {'grid': grid.reset_index().values}
+        
+    return render(request, 'grid.html', context)
+    
+
 def landing(request):
     return render(request, 'landing.html')
 
