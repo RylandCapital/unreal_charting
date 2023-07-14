@@ -358,8 +358,8 @@ def rolling_comparison_grid(request):
         grid.loc[i, '89 Day Z-Score'] = z89
         grid.loc[i, 'Average Day Z-Score'] = round((z34+z55+z89)/3,2)
 
-        context = {'grid': grid.reset_index().values}
-        
+        context = {'grid': grid.reset_index().values, 'title': 'Ratio S.D. Scan'}
+
     return render(request, 'grid.html', context)
     
 
