@@ -62,6 +62,21 @@
         justify-content: center;
         
       }
+      .table-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 75vh;
+        overflow: auto; /* adjust this as needed */
+      }
+
+      .padded-container {
+        padding: 2vh; /* adjust this as needed */
+        width: 80%; /* adjust this as needed */
+        margin-bottom: 2vh; /* space between the tables, adjust as needed */
+      }
+      
     </style>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
     <script type="text/javascript" charset="utf8" src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -72,13 +87,27 @@
     $(document).ready(function() {
     $('#myTable').DataTable({
         "pageLength": -1, 
-        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]]
+        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        "scrollY": "50vh", // Add this line
+        "scrollCollapse": true // And this line
+    });
+});
+
+    $(document).ready(function() {
+    $('#myTable2').DataTable({
+        "pageLength": -1, 
+        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+        "order": [[ 1, "desc" ]] 
     });
 });
 </script>
 
 <body>
+
 {% include "sidebar.html" %}
+
+<div class="table-container">
+<div class="padded-container">
 <table id="myTable">
     <thead>
     <tr>
@@ -134,5 +163,29 @@
   {% endfor %}
     </tbody>
    </table>  
+  </div>
+
+  <div class="padded-container">
+   <table id="myTable2">
+    <thead>
+    <tr>
+      <th>Index</th>
+      <th>Score</th>
+      <th>Sector</th>
+    </tr>
+    </thead>
+    <tbody>
+  {% for row2 in docdf %}
+    <tr>
+      <td>{{ row2.0 }}</td>
+      <td>{{ row2.1 }}</td>
+      <td>{{ row2.2 }}</td>
+    </tr>
+  {% endfor %}
+    </tbody>
+   </table>  
+</div>
+</div>
+
 
 </body>
