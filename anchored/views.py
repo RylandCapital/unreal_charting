@@ -317,9 +317,11 @@ def rolling_comparison_grid(request):
     col = db["momentum"]
     if selection=='none':
         docdf = pd.DataFrame(list(col.find())).drop('_id', axis=1).set_index('index')
+        docdf['score'] = docdf['score'].round(2)
     else:
         query = {"sector": selection}
         docdf = pd.DataFrame(list(col.find(query))).drop('_id', axis=1).set_index('index')
+        docdf['score'] = docdf['score'].round(2)
         
 
     context = {
