@@ -283,23 +283,6 @@ def rolling_comparison(request):
 #django table for ratio z scores
 def rolling_comparison_grid(request):
 
-    selection = request.GET.get('sector', 'none')
-
-    sectors = [
-        'Information Technology',
-        'Communication Services',
-        'Industrials',
-        'Financials',
-        'Consumer Discretionary',
-        'Health Care',
-        'Consumer Staples',
-        'Materials', 
-        'Energy', 
-        'Real Estate',
-        'Utilities'
-        ]
-
-
     client = MongoClient(URI)
     # Send a ping to confirm a successful connection
     try:
@@ -315,19 +298,12 @@ def rolling_comparison_grid(request):
 
     #momo score query
     col = db["momentum"]
-    if selection=='none':
-        docdf = pd.DataFrame(list(col.find())).drop('_id', axis=1).set_index('index')
-        docdf['score'] = docdf['score'].round(2)
-    else:
-        query = {"sector": selection}
-        docdf = pd.DataFrame(list(col.find(query))).drop('_id', axis=1).set_index('index')
-        docdf['score'] = docdf['score'].round(2)
-        
+    docdf = pd.DataFrame(list(col.find())).drop('_id', axis=1).set_index('index')
+    docdf['score'] = docdf['score'].round(2)
 
     context = {
 
                 'title': 'Ratio Momentum',
-                'sectors':sectors,
                 'grid': grid.reset_index().values,
                 'docdf':docdf.reset_index().values        
 
@@ -335,7 +311,37 @@ def rolling_comparison_grid(request):
 
     return render(request, 'grid.html', context)
     
+#django table for ratio z scores (international)
+def rolling_comparison_grid_intl(request):
 
+    client = MongoClient(URI)
+    # Send a ping to confirm a successful connection
+    try:
+        client.admin.command('ping')
+        print("Pinged your deployment. You successfully connected to MongoDB!")
+    except Exception as e:
+        print(e)
+    db = client["unrealcharting"]
+
+    #grid query
+    col = db["ratiogrid_intl"]
+    grid = pd.DataFrame(list(col.find())).drop('_id', axis=1).set_index('index')
+
+    #momo score query
+    col = db["momentum_idvo"]
+    docdf = pd.DataFrame(list(col.find())).drop('_id', axis=1).set_index('index')
+    docdf['score'] = docdf['score'].round(2)
+
+    context = {
+
+                'title': 'Ratio Momentum IntL',
+                'grid': grid.reset_index().values,
+                'docdf':docdf.reset_index().values        
+
+            }
+
+    return render(request, 'gridintl.html', context)
+    
 
    
 
