@@ -61,8 +61,6 @@ def get_daily_equity(request):
 
     vol_nodes = df['volume'].iloc[125:].nlargest(1).index
 
-
-
     df['vwap_maxloc'] = (df['adjusted_close'] * df['volume']).iloc[maxloc:].expanding().sum() / \
                       df['volume'].iloc[maxloc:].expanding().sum()
     df['vwap_minloc'] = (df['adjusted_close'] * df['volume']).iloc[minloc:].expanding().sum() / \
@@ -341,9 +339,3 @@ def rolling_comparison_grid_intl(request):
             }
 
     return render(request, 'gridintl.html', context)
-    
-
-   
-
-    
-  
